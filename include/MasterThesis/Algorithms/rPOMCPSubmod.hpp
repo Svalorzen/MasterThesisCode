@@ -7,7 +7,7 @@
 #include <unordered_map>
 #include <iostream>
 
-#include <MasterThesis/TreeNodes.hpp>
+#include <MasterThesis/Algorithms/Utils/TreeNodes.hpp>
 
 namespace ap = AIToolbox::POMDP;
 namespace a = AIToolbox;
