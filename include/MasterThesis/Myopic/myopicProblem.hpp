@@ -1,12 +1,9 @@
-#ifndef MYOPIC_PROBLEM
-#define MYOPIC_PROBLEM
+#ifndef MASTER_THESIS_MYOPIC_MODEL_HEADER_FILE
+#define MASTER_THESIS_MYOPIC_MODEL_HEADER_FILE
 
 #include <cstddef>
 #include <tuple>
 #include <random>
-#include <array>
-
-#include <iostream>
 
 class MyopicModel {
     public:
@@ -30,16 +27,6 @@ class MyopicModel {
     private:
         size_t sampleTransition(size_t) const;
         size_t sampleObservation(size_t, size_t) const;
-
-        unsigned cameraSize_;
-
-        // This holds information for each available camera;
-        // For each, it stores
-        // - [number of observed cells]
-        // - [top-left corner x coordinate]
-        // - [top-left corner y coordinate]
-        // - [width of the field of view]
-        std::vector<std::array<unsigned, 4>> cameraData;
 
         size_t size_, S, A;
         double discount_;

@@ -1,12 +1,9 @@
-#ifndef MYOPIC_PROBLEM_IR
-#define MYOPIC_PROBLEM_IR
+#ifndef MASTER_THESIS_MYOPIC_MODEL_IR_HEADER_FILE
+#define MASTER_THESIS_MYOPIC_MODEL_IR_HEADER_FILE
 
 #include <cstddef>
 #include <tuple>
 #include <random>
-#include <array>
-
-#include <iostream>
 
 class MyopicModelIR {
     public:
@@ -33,9 +30,6 @@ class MyopicModelIR {
     private:
         size_t sampleTransition(size_t) const;
         size_t sampleObservation(size_t, size_t) const;
-
-        unsigned cameraSize_;
-        std::vector<std::array<unsigned, 4>> cameraData; // Observed count, x1, y1, width
 
         size_t size_, S, A;
         double discount_;

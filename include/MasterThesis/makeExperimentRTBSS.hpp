@@ -4,6 +4,7 @@
 #include <AIToolbox/POMDP/Types.hpp>
 #include <AIToolbox/Impl/Seeder.hpp>
 #include <AIToolbox/ProbabilityUtils.hpp>
+#include <AIToolbox/POMDP/Utils.hpp>
 
 #include <MasterThesis/IO.hpp>
 #include <MasterThesis/Utils.hpp>
@@ -52,9 +53,15 @@ void makeExperimentRTBSS(
 
     std::cout << numExperiments << " experiments with: RTBSS! ";
     if ( usingIR )
-        std::cout << "Using IR reward from model.\n";
+        std::cout << "Using IR reward from model";
     else
-        std::cout << "Using guess reward.\n";
+        std::cout << "Using guess reward";
+
+#ifdef ENTROPY
+            std::cout << " and ENTROPY\n";
+#else
+            std::cout << "and MAX OF BELIEF\n";
+#endif
 
     std::cout << "Initial Belief: " << printBelief(modelBelief)  << '\n';
     std::cout << "Solver  Belief: " << printBelief(solverBelief) << '\n';
@@ -71,13 +78,7 @@ void makeExperimentRTBSS(
             std::tie(a, std::ignore)    = solver.sampleAction(solverBelief, std::min(solverHorizon, modelHorizon - i + 1));
             std::tie(s1, o, rew)        = model.sampleSOR(s, a);
 
-            // Extract reward
-            if ( usingIR )
-                std::tie(s1, o, rew) = model.sampleSOR(s, a);
-            else {
-                std::tie(s1, o, std::ignore) = model.sampleSOR(s, a);
-                rew = ( solver.getGuess() == s );
-            }
+            rew = ifNotIRGuess(rew, s, solver);
 
             totalReward            += rew;
             timestepTotalReward[i] += rew;
@@ -101,7 +102,7 @@ void makeExperimentRTBSS(
             // Update states
             s = s1;
             // Update belief
-            solverBelief = updateBelief(model, solverBelief, a, o);
+            solverBelief = ap::updateBelief(model, solverBelief, a, o);
         }
         if ( ! (experiment % 100) )
             gnuplotCumulativeSave(timestepTotalReward, outputFilename);

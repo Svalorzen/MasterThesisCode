@@ -2,6 +2,7 @@
 #define MASTER_THESIS_RTBSSb_HEADER_FILE
 
 #include <AIToolbox/POMDP/Types.hpp>
+#include <AIToolbox/POMDP/Utils.hpp>
 #include <AIToolbox/ProbabilityUtils.hpp>
 
 #include <limits>
@@ -122,17 +123,6 @@ class RTBSSb<M> {
          * @return An overestimate of the reward that is possible to gain.
          */
         double upperBound(const ap::Belief & b, size_t a, unsigned horizon) const;
-
-        /**
-         * @brief This function computes the probability of obtaining an observation from a belief and action.
-         *
-         * @param b The belief to start from.
-         * @param a The action performed.
-         * @param o The observation that should be received.
-         *
-         * @return The probability of getting the observation from that belief and action.
-         */
-        double beliefObservationProbability(const ap::Belief & b, size_t a, size_t o) const;
 };
 
 template <typename M>
@@ -166,8 +156,8 @@ double RTBSSb<M>::simulate(const ap::Belief & b, unsigned horizon) {
         double uBound = upperBound(b, a, horizon - 1);
         if ( uBound > max ) {
             for ( size_t o = 0; o < O; ++o ) {
-                double p = beliefObservationProbability(b, a, o);
-                auto b1 = updateBelief(model_,b,a,o);
+                double p = ap::beliefObservationProbability(model_, b, a, o);
+                auto b1 = ap::updateBelief(model_,b,a,o);
                 // Only work if it makes sense
                 if ( a::checkDifferentSmall(p, 0.0) ) rew += model_.getDiscount() * p * simulate(b1, horizon - 1);
                 rew += rewFun_(b1);
@@ -184,22 +174,6 @@ double RTBSSb<M>::simulate(const ap::Belief & b, unsigned horizon) {
 template <typename M>
 double RTBSSb<M>::upperBound(const ap::Belief &, size_t, unsigned horizon) const {
     return model_.getDiscount() * maxR_ * horizon;
-}
-
-template <typename M>
-double RTBSSb<M>::beliefObservationProbability(const ap::Belief & b, size_t a, size_t o) const {
-    double p = 0.0;
-    // This is basically the same as a belief update, but unnormalized
-    // and we sum all elements together..
-    for ( size_t s1 = 0; s1 < S; ++s1 ) {
-        double sum = 0.0;
-        for ( size_t s = 0; s < S; ++s )
-            sum += model_.getTransitionProbability(s, a, s1) * b[s];
-
-        p += model_.getObservationProbability(s1, a, o) * sum;
-    }
-
-    return p;
 }
 
 template <typename M>

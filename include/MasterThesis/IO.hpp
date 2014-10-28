@@ -8,11 +8,11 @@
 #include <fstream>
 #include <iomanip>
 
-std::stringstream printBelief(const AIToolbox::POMDP::Belief & b) {
+inline std::string printBelief(const AIToolbox::POMDP::Belief & b) {
     std::stringstream output;
     for ( auto & v : b )
         output << "[" << v << "]";
-    return output;
+    return output.str();
 }
 
 template <typename T>

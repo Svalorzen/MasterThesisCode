@@ -49,11 +49,17 @@ void makeExperimentPOMCP(
     // prediction actions for non-IR versions.
     bool usingIR = isSolverIR(1, solver);
 
-    std::cout << numExperiments << " experiments with: POMCP! ";
+    std::cout << numExperiments << " experiment(s) with: POMCP! ";
     if ( usingIR )
-        std::cout << "Using IR reward from model.\n";
+        std::cout << "Using IR reward from model";
     else
-        std::cout << "Using guess reward.\n";
+        std::cout << "Using guess reward";
+
+#ifdef ENTROPY
+            std::cout << " and ENTROPY\n";
+#else
+            std::cout << "and MAX OF BELIEF\n";
+#endif
 
     std::cout << "Initial Belief: " << printBelief(modelBelief)  << '\n';
     std::cout << "Solver  Belief: " << printBelief(solverBelief) << '\n';
@@ -65,13 +71,9 @@ void makeExperimentPOMCP(
         for ( unsigned i = 1; i <= modelHorizon; ++i ) {
             size_t s1, o; double rew;
 
-            // Extract reward
-            if ( usingIR )
-                std::tie(s1, o, rew) = model.sampleSOR(s, a);
-            else {
-                std::tie(s1, o, std::ignore) = model.sampleSOR(s, a);
-                rew = ( solver.getGuess() == s );
-            }
+            std::tie(s1, o, rew) = model.sampleSOR(s, a);
+
+            rew = ifNotIRGuess(rew, s, solver);
 
             totalReward            += rew;
             timestepTotalReward[i] += rew;
