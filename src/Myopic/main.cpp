@@ -26,13 +26,14 @@ int main(int argc, char * argv[]) {
                      "solverHor  ==> the solver horizon\n"
                      "modelHor   ==> the length of an episode\n"
                      "iterations ==> the number of iterations for POMCP\n"
+                     "k          ==> the max trigger for rPOMCP\n"
                      "numExp     ==> number of episodes to do\n"
                      "filename   ==> where to save results\n";
         return 0;
     }
 
-    if ( argc < 9 ) {
-        std::cout << "Usage: " << argv[0] << " [help] solver gridSize initState solverHor modelHor iterations numExp filename\n";
+    if ( argc < 10 ) {
+        std::cout << "Usage: " << argv[0] << " [help] solver gridSize initState solverHor modelHor iterations k numExp filename\n";
         return 0;
     }
 
@@ -42,8 +43,9 @@ int main(int argc, char * argv[]) {
     unsigned solverHor      = std::stoi(argv[4]);
     unsigned modelHor       = std::stoi(argv[5]);
     unsigned iterations     = std::stod(argv[6]);
-    unsigned numExp         = std::stoi(argv[7]);
-    std::string filename    = argv[8];
+    unsigned k              = std::stod(argv[7]);
+    unsigned numExp         = std::stoi(argv[8]);
+    std::string filename    = argv[9];
 
     double discount = 0.9;
 
@@ -72,7 +74,7 @@ int main(int argc, char * argv[]) {
         }
         case 1: {
             auto model = MyopicModel(gridSize, discount);
-            auto pomcp = rPOMCP<decltype(model)>(model, 1000, iterations, 5);
+            auto pomcp = rPOMCP<decltype(model)>(model, 1000, iterations, 5, k);
             makeExperimentPOMCP(numExp, modelHor, model, belief, solverHor, pomcp, belief, filename);
             break;
         }
