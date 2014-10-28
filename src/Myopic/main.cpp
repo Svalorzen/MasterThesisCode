@@ -41,7 +41,7 @@ int main(int argc, char * argv[]) {
     unsigned initState      = std::stoi(argv[3]);
     unsigned solverHor      = std::stoi(argv[4]);
     unsigned modelHor       = std::stoi(argv[5]);
-    unsigned iterations     = std::stoi(argv[6]);
+    unsigned iterations     = std::stod(argv[6]);
     unsigned numExp         = std::stoi(argv[7]);
     std::string filename    = argv[8];
 
