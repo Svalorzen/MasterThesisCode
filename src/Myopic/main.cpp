@@ -12,6 +12,7 @@
 
 #include <MasterThesis/makeExperimentPOMCP.hpp>
 #include <MasterThesis/makeExperimentRTBSS.hpp>
+#include <MasterThesis/Signals.hpp>
 
 #include <iostream>
 #include <string>
@@ -64,6 +65,10 @@ int main(int argc, char * argv[]) {
             v = 1.0 / S;
     else
         belief[initState] = 1.0;
+
+    // We register to this so if the user does Ctrl-C
+    // we still save the results on file.
+    registerSigInt();
 
     switch ( solver ) {
         case 0: {

@@ -6,6 +6,7 @@
 #include <AIToolbox/ProbabilityUtils.hpp>
 
 #include <MasterThesis/IO.hpp>
+#include <MasterThesis/Signals.hpp>
 
 #include <cstddef>
 #include <vector>
@@ -51,7 +52,8 @@ void makeMultiExperimentPOMCP(
     std::cout << "Initial Belief: " << printBelief(modelBelief)  << '\n';
     std::cout << "Solver  Belief: " << printBelief(solverBelief) << '\n';
 
-    for ( unsigned experiment = 1; experiment <= numExperiments; ++experiment ) {
+    unsigned experiment = 1;
+    for ( ; experiment <= numExperiments; ++experiment ) {
         // Run pomcp, but don't get actions yet
         for ( unsigned p = 0; p < numTargets; ++p ) {
             pos[p] = AIToolbox::sampleProbability(model.getS(), modelBelief, rand);
@@ -85,10 +87,11 @@ void makeMultiExperimentPOMCP(
 
             a = extractAction(solvers);
         }
+        if ( processInterrupted ) break;
         if ( ! (experiment % 100) )
-            gnuplotCumulativeSave(timestepTotalReward, outputFilename);
+            gnuplotCumulativeSave(timestepTotalReward, outputFilename, experiment);
     }
-    gnuplotCumulativeSave(timestepTotalReward, outputFilename);
+    gnuplotCumulativeSave(timestepTotalReward, outputFilename, std::min(experiment, numExperiments));
 }
 
 #endif

@@ -7,6 +7,7 @@
 
 #include <MasterThesis/IO.hpp>
 #include <MasterThesis/Utils.hpp>
+#include <MasterThesis/Signals.hpp>
 
 #include <random>
 #include <iostream>
@@ -58,13 +59,14 @@ void makeExperimentPOMCP(
 #ifdef ENTROPY
             std::cout << " and ENTROPY\n";
 #else
-            std::cout << "and MAX OF BELIEF\n";
+            std::cout << " and MAX OF BELIEF\n";
 #endif
 
     std::cout << "Initial Belief: " << printBelief(modelBelief)  << '\n';
     std::cout << "Solver  Belief: " << printBelief(solverBelief) << '\n';
 
-    for ( unsigned experiment = 1; experiment <= numExperiments; ++experiment ) {
+    unsigned experiment = 1;
+    for ( ; experiment <= numExperiments; ++experiment ) {
         size_t s = AIToolbox::sampleProbability(model.getS(), modelBelief, rand);
         size_t a = solver.sampleAction(solverBelief, std::min(solverHorizon, modelHorizon));
 
@@ -100,10 +102,11 @@ void makeExperimentPOMCP(
             a = solver.sampleAction(a, o, std::min(solverHorizon, modelHorizon - i));
         }
 
+        if ( processInterrupted ) break;
         if ( ! (experiment % 100) )
-            gnuplotCumulativeSave(timestepTotalReward, outputFilename);
+            gnuplotCumulativeSave(timestepTotalReward, outputFilename, experiment);
     }
-    gnuplotCumulativeSave(timestepTotalReward, outputFilename);
+    gnuplotCumulativeSave(timestepTotalReward, outputFilename, std::min(experiment, numExperiments));
 }
 
 #endif

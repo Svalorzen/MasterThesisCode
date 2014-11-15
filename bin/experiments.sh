@@ -1,4 +1,5 @@
 #/bin/bash
+trap 'kill -INT -$pid' INT
 
 set -ex
 
@@ -23,12 +24,13 @@ nExp=1000
 iters=1e4
 
 COLUMNS=1
+# Should be 20 options (2 + 2 + 4 + 6 + 6)
 options=(
     "Myopic POMCP-IR, MoB"
     "5-Hor  POMCP-IR, MoB"
 
     "Myopic RTBSS-IR, MoB"
-    "5-Hor  RTBSS-IR, MoB"
+    "3-Hor  RTBSS-IR, MoB"
 
     "Myopic RTBSSb,   MoB"
     "Myopic RTBSSb,   Entropy"
@@ -52,80 +54,84 @@ select opt in "${options[@]}"
 do
     case $opt in
         "Myopic POMCP-IR, MoB")
-            # ./myo  solv gridSize initState solvHor modelHor  iters   k    numExp          filename
-            ./myoMB     0  $wSize   $iState     1     $horiz  $iters   0     $nExp    $resultFolder/myo_MB_0_$wSize\_$iState\_1_$horiz\_$iters\_$nExp\.txt
-            break
+            name='myoMB'; solver=0; solverHorizon=1; k=0; break
             ;;
         "5-Hor  POMCP-IR, MoB")
-            # ./myo  solv gridSize initState solvHor modelHor  iters   k    numExp          filename
-            ./myoMB     0  $wSize   $iState     5     $horiz  $iters   0     $nExp    $resultFolder/myo_MB_0_$wSize\_$iState\_5_$horiz\_$iters\_$nExp\.txt
-            break
+            name='myoMB'; solver=1; solverHorizon=5; k=0; break
             ;;
 
 #####################
 
         "Myopic RTBSS-IR, MoB")
-            # ./myo  solv gridSize initState solvHor modelHor  iters   k    numExp          filename
-            ./myoMB     2  $wSize   $iState     1     $horiz  $iters   0     $nExp    $resultFolder/myo_MB_2_$wSize\_$iState\_1_$horiz\_$iters\_$nExp\.txt
-            break
+            name='myoMB'; solver=2; solverHorizon=1; k=0; break
             ;;
-        "5-Hor  RTBSS-IR, MoB")
-            # ./myo  solv gridSize initState solvHor modelHor  iters   k    numExp          filename
-            ./myoMB     2  $wSize   $iState     5     $horiz  $iters   0     $nExp    $resultFolder/myo_MB_2_$wSize\_$iState\_5_$horiz\_$iters\_$nExp\.txt
-            break
+        "3-Hor  RTBSS-IR, MoB")
+            name='myoMB'; solver=2; solverHorizon=3; k=0; break
             ;;
 
 #####################
 
         "Myopic RTBSSb,   MoB")
-            # ./myo  solv gridSize initState solvHor modelHor  iters   k    numExp          filename
-            ./myoMB     3  $wSize   $iState     1     $horiz  $iters   0     $nExp    $resultFolder/myo_MB_3_$wSize\_$iState\_1_$horiz\_$iters\_$nExp\.txt
-            break
+            name='myoMB'; solver=3; solverHorizon=1; k=0; break
             ;;
         "Myopic RTBSSb,   Entropy")
-            # ./myo  solv gridSize initState solvHor modelHor  iters   k    numExp          filename
-            ./myo       3  $wSize   $iState     1     $horiz  $iters   0     $nExp    $resultFolder/myo_EE_3_$wSize\_$iState\_1_$horiz\_$iters\_$nExp\.txt
-            break
+            name='myo';   solver=3; solverHorizon=1; k=0; break
             ;;
         "5-Hor  RTBSSb,   MoB")
-            # ./myo  solv gridSize initState solvHor modelHor  iters   k    numExp          filename
-            ./myoMB     3  $wSize   $iState     5     $horiz  $iters   0     $nExp    $resultFolder/myo_MB_3_$wSize\_$iState\_5_$horiz\_$iters\_$nExp\.txt
-            break
+            name='myoMB'; solver=3; solverHorizon=5; k=0; break
             ;;
         "5-Hor  RTBSSb,   Entropy")
-            # ./myo  solv gridSize initState solvHor modelHor  iters   k    numExp          filename
-            ./myo       3  $wSize   $iState     5     $horiz  $iters   0     $nExp    $resultFolder/myo_EE_3_$wSize\_$iState\_5_$horiz\_$iters\_$nExp\.txt
-            break
+            name='myo';   solver=3; solverHorizon=5; k=0; break
             ;;
 
 #####################
 
         "Myopic rPOMCP,   MoB,     k=1")
-            # ./myo  solv gridSize initState solvHor modelHor  iters   k    numExp          filename
-            ./myoMB     1  $wSize   $iState     1     $horiz  $iters   1    $nExp    $resultFolder/myo_1_$wSize\_$iState\_1_$horiz\_$iters\_$nExp\.txt
-            break
+            name='myoMB'; solver=1; solverHorizon=1; k=1; break
             ;;
         "Myopic rPOMCP,   MoB,     k=500")
-            # ./myo  solv gridSize initState solvHor modelHor  iters   k    numExp          filename
-            ./myoMB     1  $wSize   $iState     1     $horiz  $iters  500    $nExp    $resultFolder/myo_1_$wSize\_$iState\_500_$horiz\_$iters\_$nExp\.txt
-            break
+            name='myoMB'; solver=1; solverHorizon=1; k=500; break
             ;;
         "Myopic rPOMCP,   MoB,     k=10000")
-            # ./myo  solv gridSize initState solvHor modelHor  iters   k    numExp          filename
-            ./myoMB     1  $wSize   $iState     1     $horiz  $iters 10000    $nExp    $resultFolder/myo_1_$wSize\_$iState\_10000_$horiz\_$iters\_$nExp\.txt
-            break
+            name='myoMB'; solver=1; solverHorizon=1; k=10000; break
             ;;
 
-### TODO: CONTINUE FROM HERE:
-
-
-
-        "5-Hor  rPOMCP,   Entropy")
-            # ./myo  solv gridSize initState solvHor modelHor  iters   k    numExp          filename
-            ./myo       1  $wSize   $iState     5     $horiz  $iters   1     $nExp    $resultFolder/myo_1_$wSize\_$iState\_5_$horiz\_$iters\_$nExp\.txt
-            break
+        "Myopic rPOMCP,   Entropy, k=1")
+            name='myo';   solver=1; solverHorizon=1; k=1; break
             ;;
+        "Myopic rPOMCP,   Entropy, k=500")
+            name='myo';   solver=1; solverHorizon=1; k=500; break
+            ;;
+        "Myopic rPOMCP,   Entropy, k=10000")
+            name='myo';   solver=1; solverHorizon=1; k=10000; break
+            ;;
+
+        "5-Hor  rPOMCP,   MoB,     k=1")
+            name='myoMB'; solver=1; solverHorizon=5; k=1; break
+            ;;
+        "5-Hor  rPOMCP,   MoB,     k=500")
+            name='myoMB'; solver=1; solverHorizon=5; k=500; break
+            ;;
+        "5-Hor  rPOMCP,   MoB,     k=10000")
+            name='myoMB'; solver=1; solverHorizon=5; k=10000; break
+            ;;
+
+        "5-Hor  rPOMCP,   Entropy, k=1")
+            name='myo';   solver=1; solverHorizon=5; k=1; break
+            ;;
+        "5-Hor  rPOMCP,   Entropy, k=500")
+            name='myo';   solver=1; solverHorizon=5; k=500; break
+            ;;
+        "5-Hor  rPOMCP,   Entropy, k=10000")
+            name='myo';   solver=1; solverHorizon=5; k=10000; break
+            ;;
+
         *) echo invalid option;;
     esac
 done
+
+# Give hard limit of 3 hours per command
+timeout -s 2 10800 ./$name       $solver  $wSize   $iState     $solverHorizon     $horiz  $iters   $k     $nExp    $resultFolder/$name\_$solver\_$wSize\_$iState\_$solverHorizon\_$horiz\_$iters\_$nExp\.txt &
+pid=$!
+wait $pid
 

@@ -8,6 +8,7 @@
 
 #include <MasterThesis/IO.hpp>
 #include <MasterThesis/Utils.hpp>
+#include <MasterThesis/Signals.hpp>
 
 #include <random>
 #include <iostream>
@@ -60,7 +61,7 @@ void makeExperimentRTBSS(
 #ifdef ENTROPY
             std::cout << " and ENTROPY\n";
 #else
-            std::cout << "and MAX OF BELIEF\n";
+            std::cout << " and MAX OF BELIEF\n";
 #endif
 
     std::cout << "Initial Belief: " << printBelief(modelBelief)  << '\n';
@@ -68,7 +69,8 @@ void makeExperimentRTBSS(
 
     auto restartBelief = solverBelief;
 
-    for ( unsigned experiment = 1; experiment <= numExperiments; ++experiment ) {
+    unsigned experiment = 1;
+    for ( ; experiment <= numExperiments; ++experiment ) {
         solverBelief = restartBelief;
         size_t s = AIToolbox::sampleProbability(model.getS(), modelBelief, rand);
 
@@ -104,10 +106,11 @@ void makeExperimentRTBSS(
             // Update belief
             solverBelief = ap::updateBelief(model, solverBelief, a, o);
         }
+        if ( processInterrupted ) break;
         if ( ! (experiment % 100) )
-            gnuplotCumulativeSave(timestepTotalReward, outputFilename);
+            gnuplotCumulativeSave(timestepTotalReward, outputFilename, experiment);
     }
-    gnuplotCumulativeSave(timestepTotalReward, outputFilename);
+    gnuplotCumulativeSave(timestepTotalReward, outputFilename, std::min(experiment, numExperiments));
 }
 
 #endif
