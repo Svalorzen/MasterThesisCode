@@ -20,7 +20,7 @@ PS3='Please enter your choice: '
 wSize=3
 iState=6
 horiz=10
-nExp=1000
+nExp=3000
 iters=1e4
 
 COLUMNS=1
@@ -57,7 +57,7 @@ do
             name='myoMB'; solver=0; solverHorizon=1; k=0; break
             ;;
         "5-Hor  POMCP-IR, MoB")
-            name='myoMB'; solver=1; solverHorizon=5; k=0; break
+            name='myoMB'; solver=0; solverHorizon=5; k=0; break
             ;;
 
 #####################
@@ -131,7 +131,7 @@ do
 done
 
 # Give hard limit of 3 hours per command
-timeout -s 2 10800 ./$name       $solver  $wSize   $iState     $solverHorizon     $horiz  $iters   $k     $nExp    $resultFolder/$name\_$solver\_$wSize\_$iState\_$solverHorizon\_$horiz\_$iters\_$nExp\.txt &
+timeout -s 2 10800 ./$name       $solver  $wSize   $iState     $solverHorizon     $horiz  $iters   $k     $nExp    $resultFolder/$name\_$solver\_$wSize\_$iState\_$solverHorizon\_$horiz\_$iters\_$k\_$nExp\.txt &
 pid=$!
 wait $pid
 
