@@ -8,18 +8,32 @@ include_directories(${LPSOLVE_INCLUDE_DIR})
 find_library(AIMDP AIToolboxMDP ${LOCAL_LIBS})
 find_library(AIPOMDP AIToolboxPOMDP ${LOCAL_LIBS})
 
+option(VISUALIZE_CAMERAS "Activates Camera world visualization" OFF)
+
 # MYOPIC EXECUTABLES:
 
-add_executable(myo   ./Myopic/main.cpp ./Myopic/myopicProblem.cpp ./Myopic/myopicProblemIR.cpp ./Algorithm/TreeNodes.cpp)
-add_executable(myoMB ./Myopic/main.cpp ./Myopic/myopicProblem.cpp ./Myopic/myopicProblemIR.cpp ./Algorithm/TreeNodes.cpp)
+# add_executable(myo   ./Myopic/main.cpp ./Myopic/myopicProblem.cpp ./Myopic/myopicProblemIR.cpp ./Algorithm/TreeNodes.cpp)
+# add_executable(myoMB ./Myopic/main.cpp ./Myopic/myopicProblem.cpp ./Myopic/myopicProblemIR.cpp ./Algorithm/TreeNodes.cpp)
+#
+# set_target_properties(myo     PROPERTIES COMPILE_DEFINITIONS "ENTROPY")
+#
+# target_link_libraries(myo          ${AIPOMDP} ${LPSOLVE_LIBRARIES} ${AIMDP})
+# target_link_libraries(myoMB        ${AIPOMDP} ${LPSOLVE_LIBRARIES} ${AIMDP})
 
-set_target_properties(myo     PROPERTIES COMPILE_DEFINITIONS "ENTROPY")
+# CAMERA BASIC EXECUTABLES:
 
-target_link_libraries(myo          ${AIPOMDP} ${LPSOLVE_LIBRARIES} ${AIMDP})
-target_link_libraries(myoMB        ${AIPOMDP} ${LPSOLVE_LIBRARIES} ${AIMDP})
+add_executable(cameraBasic   ./CameraBasic/main.cpp ./CameraBasic/cameraBasicProblem.cpp ./Algorithm/TreeNodes.cpp)
+add_executable(cameraBasicMB ./CameraBasic/main.cpp ./CameraBasic/cameraBasicProblem.cpp ./Algorithm/TreeNodes.cpp)
 
-# add_executable(cameras mainCameras.cpp cameraProblem.cpp ./BeliefNode.cpp)
-# add_executable(camerasMB mainCameras.cpp cameraProblem.cpp ./BeliefNode.cpp)
+set_target_properties(cameraBasic PROPERTIES COMPILE_DEFINITIONS "ENTROPY")
+if ( VISUALIZE_CAMERAS )
+    set_target_properties(cameraBasic   PROPERTIES COMPILE_DEFINITIONS "VISUALIZE")
+    set_target_properties(cameraBasicMB PROPERTIES COMPILE_DEFINITIONS "VISUALIZE")
+endif()
+
+target_link_libraries(cameraBasic      ${AIPOMDP} ${LPSOLVE_LIBRARIES} ${AIMDP})
+target_link_libraries(cameraBasicMB    ${AIPOMDP} ${LPSOLVE_LIBRARIES} ${AIMDP})
+
 #
 # add_executable(multiCameras mainMultiCameras.cpp cameraProblem.cpp ./BeliefNode.cpp)
 # add_executable(multiCamerasMB mainMultiCameras.cpp cameraProblem.cpp ./BeliefNode.cpp)

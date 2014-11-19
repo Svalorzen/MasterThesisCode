@@ -37,7 +37,7 @@ void makeMultiExperimentPOMCP(
                     unsigned numExperiments, unsigned numTargets,
                     unsigned modelHorizon,   const Model  & model,            const ap::Belief & modelBelief,
                     unsigned solverHorizon,  std::vector<Solver> & solvers,   const ap::Belief & solverBelief,
-                    const std::string & outputFilename )
+                    const std::string & outputFilename, bool useTrajectory = false )
 {
     static std::default_random_engine rand(AIToolbox::Impl::Seeder::getSeed());
 
@@ -62,25 +62,46 @@ void makeMultiExperimentPOMCP(
         // Extract action
         size_t a = extractAction(solvers);
 
+        std::vector<std::vector<size_t>> trajectories;
+        if ( useTrajectory ) {
+            for ( unsigned p = 0; p < numTargets; ++p ) trajectories.push_back( makeTrajectory(model, modelHorizon + 1, modelBelief) );
+        }
+
         for ( unsigned i = 1; i <= modelHorizon; ++i ) {
             double rew;
+#ifdef VISUALIZE
+            auto oldp = pos;
+#endif
             // Extract observations and rewards
             for ( unsigned p = 0; p < numTargets; ++p ) {
-                std::tie(pos[p], obs[p], std::ignore) = model.sampleSOR( pos[p], a );
+                if ( useTrajectory ) {
+                    pos[p] = trajectories[p][i];
+                    obs[p] = model.sampleOR( trajectories[p][i-1], a, trajectories[p][i] );
+                }
+                else
+                    std::tie(pos[p], obs[p], std::ignore) = model.sampleSOR( pos[p], a );
 
                 rew += ( solvers[p].getGuess() == pos[p] );
             }
 
             totalReward            += rew;
             timestepTotalReward[i] += rew;
-            avgReward               = totalReward / (experiment + ((double)i)/modelHorizon);
+            if ( experiment == 1 )
+                avgReward           = totalReward;
+            else
+                avgReward           = totalReward / (experiment - 1 + ((double)i)/modelHorizon);
 
             std::cout // << "[S = " << s << "][A = " << a << "][S1 = " << s1 << "][ O = " << o << " ][ R = " << rew << " ]"
-                      << "EXPERIMENT "  << std::setw(4) << experiment
+                      << "EXPERIMENT "      << std::setw(4) << experiment
                       << ", TIMESTEP "      << std::setw(4) << i
                       << "\tTotal rew: "    << std::setw(4) << totalReward
-                      << "\tAvg: "          << std::setw(4) << avgReward
-                      << '\r'               << std::flush;
+                      << "\tAvg: "          << std::setw(4) << avgReward;
+#ifdef VISUALIZE
+            std::cout << '\n';
+            model.visualize(oldp, a);
+#else
+            std::cout << '\r'               << std::flush;
+#endif
 
             for ( unsigned p = 0; p < numTargets; ++p )
                 solvers[p].sampleAction(a, obs[p], std::min(solverHorizon, modelHorizon - i));

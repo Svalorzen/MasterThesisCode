@@ -20,8 +20,8 @@ PS3='Please enter your choice: '
 wSize=3
 iState=6
 horiz=10
-nExp=3000
-iters=1e4
+nExp=1000
+iters=1e6
 
 COLUMNS=1
 # Should be 20 options (2 + 2 + 4 + 6 + 6)

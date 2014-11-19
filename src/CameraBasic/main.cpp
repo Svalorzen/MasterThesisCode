@@ -1,21 +1,16 @@
 #include <AIToolbox/ProbabilityUtils.hpp>
 
+#include <AIToolbox/POMDP/Algorithms/IncrementalPruning.hpp>
 #include <AIToolbox/POMDP/Policies/Policy.hpp>
 
-#include <MasterThesis/Myopic/myopicProblem.hpp>
-#include <MasterThesis/Myopic/myopicProblemIR.hpp>
-
-#include <AIToolbox/POMDP/Algorithms/POMCP.hpp>
-#include <AIToolbox/POMDP/Algorithms/RTBSS.hpp>
 #include <MasterThesis/Algorithms/rPOMCP.hpp>
 #include <MasterThesis/Algorithms/RTBSSb.hpp>
-
+#include <MasterThesis/CameraBasic/cameraBasicProblem.hpp>
 #include <MasterThesis/makeExperimentPOMCP.hpp>
 #include <MasterThesis/makeExperimentRTBSS.hpp>
-#include <MasterThesis/Signals.hpp>
 
 #include <iostream>
-#include <string>
+#include <fstream>
 
 int main(int argc, char * argv[]) {
     using namespace AIToolbox;
@@ -24,9 +19,9 @@ int main(int argc, char * argv[]) {
     registerSigInt();
 
     if ( argc > 1 && std::string(argv[1]) == "help" ) {
-        std::cout << "solver     ==> 0: POMCP(IR); 1: rPOMCP; 2: RTBSS(IR); 3: RTBSSb\n"
-                     "gridSize   ==> half the states\n"
-                     "initState  ==> the initial state, or 2*gridSize for uniform\n"
+        std::cout << "solver     ==> 1: rPOMCP; 3: RTBSSb\n"
+                     "gridSize   ==> width/height of the room\n"
+                     "initState  ==> the initial state, or gridSize^2+1 for uniform\n"
                      "solverHor  ==> the solver horizon\n"
                      "modelHor   ==> the length of an episode\n"
                      "iterations ==> the number of iterations for POMCP\n"
@@ -53,43 +48,35 @@ int main(int argc, char * argv[]) {
 
     double discount = 0.9;
 
-    std::cout << "Iterations = " << iterations << "\n";
-
-    auto S = gridSize * 2;
-    if ( initState > S ) {
-        std::cerr  << "Initial state out is too high!\n";
-        return 1;
+    if ( argc < 7 ) {
+        std::cout << "Usage: " << argv[0] << " gridSize pomcpHor horizon numExp samples maxK\n";
+        return 0;
     }
 
-    POMDP::Belief belief(S, 0.0);
+    CameraBasicModel model(gridSize, 1.0);
+    size_t S = model.getS();
 
+    POMDP::Belief belief(S, 0.0);
     if ( initState == S )
         for ( auto & v : belief )
             v = 1.0 / S;
     else
         belief[initState] = 1.0;
 
+    // This would set the belief to the center state,
+    // no matter the gridSize
+    //
+    // bool even = !(gridSize % 2);
+    // belief[gridSize * (gridSize-1)/2 - even] = 1.0;
+
     switch ( solver ) {
-        case 0: {
-            auto model = MyopicModelIR(gridSize, discount);
-            auto pomcp = POMDP::POMCP<decltype(model)>(model, 1000, iterations, 5);
-            makeExperimentPOMCP(numExp, modelHor, model, belief, solverHor, pomcp, belief, filename);
-            break;
-        }
         case 1: {
-            auto model = MyopicModel(gridSize, discount);
             auto pomcp = rPOMCP<decltype(model)>(model, 1000, iterations, 5, k);
-            makeExperimentPOMCP(numExp, modelHor, model, belief, solverHor, pomcp, belief, filename);
-            break;
-        }
-        case 2: {
-            auto model = MyopicModelIR(gridSize, discount);
-            auto rtbss = POMDP::RTBSS<decltype(model)>(model, 1);
-            makeExperimentRTBSS(numExp, modelHor, model, belief, solverHor, rtbss, belief, filename);
+            // We use trajectories so targets move in a realistic way
+            makeExperimentPOMCP(numExp, modelHor, model, belief, solverHor, pomcp, belief, filename, true);
             break;
         }
         case 3: {
-            auto model = MyopicModel(gridSize, discount);
 #ifdef ENTROPY
             auto function = [](const POMDP::Belief & b) {
                 double e = 0.0;
@@ -104,7 +91,8 @@ int main(int argc, char * argv[]) {
             };
             auto rtbss = RTBSSb<decltype(model)>(model, 1, function);
 #endif
-            makeExperimentRTBSS(numExp, modelHor, model, belief, solverHor, rtbss, belief, filename);
+            // We use trajectories so targets move in a realistic way
+            makeExperimentRTBSS(numExp, modelHor, model, belief, solverHor, rtbss, belief, filename, true);
             break;
         }
     }

@@ -38,7 +38,7 @@ void makeExperimentRTBSS(
                     unsigned numExperiments,
                     unsigned modelHorizon,   const Model  & model,    const ap::Belief & modelBelief,
                     unsigned solverHorizon,        Solver & solver,         ap::Belief   solverBelief,
-                    const std::string & outputFilename )
+                    const std::string & outputFilename, bool useTrajectory = false )
 {
     static std::default_random_engine rand(AIToolbox::Impl::Seeder::getSeed());
 
@@ -74,17 +74,33 @@ void makeExperimentRTBSS(
         solverBelief = restartBelief;
         size_t s = AIToolbox::sampleProbability(model.getS(), modelBelief, rand);
 
+        std::vector<size_t> trajectory;
+        if ( useTrajectory ) {
+            trajectory = makeTrajectory(model, modelHorizon + 1, modelBelief);
+            std::cout << "TRAJECTORY: ";
+            for ( auto s : trajectory ) std::cout << "[" << s << "]";
+            std::cout << "\n";
+        }
+
         for ( unsigned i = 1; i <= modelHorizon; ++i ) {
             size_t s1, a, o; double rew;
 
             std::tie(a, std::ignore)    = solver.sampleAction(solverBelief, std::min(solverHorizon, modelHorizon - i + 1));
-            std::tie(s1, o, rew)        = model.sampleSOR(s, a);
+            if ( useTrajectory ) {
+                s1 = trajectory[i];
+                std::tie(o, rew) = model.sampleOR(trajectory[i-1], a, trajectory[i]);
+            }
+            else
+                std::tie(s1, o, rew) = model.sampleSOR(s, a);
 
             rew = ifNotIRGuess(rew, s, solver);
 
             totalReward            += rew;
             timestepTotalReward[i] += rew;
-            avgReward               = totalReward / (experiment + ((double)i)/modelHorizon);
+            if ( experiment == 1 )
+                avgReward           = totalReward;
+            else
+                avgReward           = totalReward / (experiment - 1 + ((double)i)/modelHorizon);
 
             std::cout << "[S  = "           << std::setw(3) << s << ']'
                       << "[A  = "           << std::setw(3) << a << ']';
@@ -98,8 +114,13 @@ void makeExperimentRTBSS(
                       << "\t\tEXPERIMENT "  << std::setw(4) << experiment
                       << ", TIMESTEP "      << std::setw(4) << i
                       << "\tTotal rew: "    << std::setw(4) << totalReward
-                      << "\tAvg: "          << std::setw(4) << avgReward
-                      << '\r'               << std::flush;
+                      << "\tAvg: "          << std::setw(4) << avgReward;
+#ifdef VISUALIZE
+            std::cout << '\n';
+            model.visualize(std::vector<size_t>{s}, a);
+#else
+            std::cout << '\r'               << std::flush;
+#endif
 
             // Update states
             s = s1;
