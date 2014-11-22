@@ -80,7 +80,7 @@ int main(int argc, char * argv[]) {
 #ifdef ENTROPY
             auto function = [](const POMDP::Belief & b) {
                 double e = 0.0;
-                for ( auto v : b ) {
+                for ( auto v : b )
                     if ( checkDifferentSmall(v, 0.0) ) e += v * std::log(v);
                 return e;
             };
