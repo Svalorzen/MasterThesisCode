@@ -14,14 +14,14 @@ PS3='Please enter your choice: '
 #   - World size        = 3 ( which means 6 states )
 #   - Initial state     = 6 ( uniform belief )
 #   - Model Horizon     = 10
-#   - Num. Experiments  = 1000
+#   - Num. Experiments  = 3000
 #   - POMCP iterations  = 1e4
 
 wSize=3
 iState=6
 horiz=10
-nExp=1000
-iters=1e6
+nExp=3000
+iters=1e4
 
 COLUMNS=1
 # Should be 20 options (2 + 2 + 4 + 6 + 6)
