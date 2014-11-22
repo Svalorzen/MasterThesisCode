@@ -94,7 +94,7 @@ int main(int argc, char * argv[]) {
             auto function = [](const POMDP::Belief & b) {
                 double e = 0.0;
                 for ( auto v : b )
-                    e += v * std::log(v);
+                    if ( checkDifferentSmall(v, 0.0) ) e += v * std::log(v);
                 return e;
             };
             auto rtbss = RTBSSb<decltype(model)>(model, 0, function);

@@ -110,6 +110,11 @@ size_t CameraBasicModel::sampleTrajectoryTransition(size_t s) const {
     return getNextDirState(s, dir);
 }
 
+double computePrecision(int puc, int data) {
+    // 0.5-1
+    return 1.0 - ( std::abs(puc - data/2 - 1) / (double) data );
+}
+
 size_t CameraBasicModel::sampleObservation(size_t s1, size_t a) const {
     static std::uniform_int_distribution<unsigned> dist1(0, 4);
     static std::uniform_real_distribution<double>  prob(0, 1);
@@ -121,8 +126,7 @@ size_t CameraBasicModel::sampleObservation(size_t s1, size_t a) const {
     // like this, since we compute imprecision from center as if the
     // camera sees a line rather than an area, but close enough.
     if ( positionUnderCamera != 0 ) {
-        // 0.5-1
-        double precision = 1.0 - (std::abs(positionUnderCamera - cameraData[a][0]/2 - 1) / (double) cameraData[a][0]);
+        double precision = computePrecision(positionUnderCamera, cameraData[a][0]);
 
         // Camera worked correctly
         if ( precision > prob(rand_) ) return positionUnderCamera;
@@ -146,7 +150,7 @@ double CameraBasicModel::getObservationProbability(size_t s1, size_t a, size_t o
     if ( !positionUnderCamera )
         return o ? 0.0 : 1.0;
     // Precision with used camera
-    double precision = 1.0 - (std::abs(positionUnderCamera - cameraData[a][0]/2 - 1) / (double) cameraData[a][0]);
+    double precision = computePrecision(positionUnderCamera, cameraData[a][0]);
     double error = (1.0 - precision)/5.0;
 
     if ( o == positionUnderCamera )

@@ -118,7 +118,7 @@ class RTBSSb<M> {
          *
          * @param b The belief from where we want to guess the future reward.
          * @param a The action performed from the belief.
-         * @param horizon The timesteps remaining till the end.
+         * @param horizon The timesteps remaining till the end. Must be greater than 0.
          *
          * @return An overestimate of the reward that is possible to gain.
          */
@@ -153,14 +153,16 @@ double RTBSSb<M>::simulate(const ap::Belief & b, unsigned horizon) {
     for ( auto a : actionList ) {
         double rew = 0.0;
 
-        double uBound = upperBound(b, a, horizon - 1);
+        double uBound = upperBound(b, a, horizon);
         if ( uBound > max ) {
             for ( size_t o = 0; o < O; ++o ) {
                 double p = ap::beliefObservationProbability(model_, b, a, o);
-                auto b1 = ap::updateBelief(model_,b,a,o);
                 // Only work if it makes sense
-                if ( a::checkDifferentSmall(p, 0.0) ) rew += model_.getDiscount() * p * simulate(b1, horizon - 1);
-                rew += rewFun_(b1);
+                if ( a::checkEqualSmall(p, 0.0) ) continue;
+
+                auto b1 = ap::updateBelief(model_,b,a,o);
+                rew += model_.getDiscount() * p * simulate(b1, horizon - 1);
+                rew += p * rewFun_(b1);
             }
         }
         if ( rew > max ) {
@@ -173,7 +175,7 @@ double RTBSSb<M>::simulate(const ap::Belief & b, unsigned horizon) {
 
 template <typename M>
 double RTBSSb<M>::upperBound(const ap::Belief &, size_t, unsigned horizon) const {
-    return model_.getDiscount() * maxR_ * horizon;
+    return maxR_ + model_.getDiscount() * maxR_ * (horizon - 1);
 }
 
 template <typename M>

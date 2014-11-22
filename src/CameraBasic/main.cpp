@@ -53,7 +53,7 @@ int main(int argc, char * argv[]) {
         return 0;
     }
 
-    CameraBasicModel model(gridSize, 1.0);
+    CameraBasicModel model(gridSize, discount);
     size_t S = model.getS();
 
     POMDP::Belief belief(S, 0.0);
@@ -80,8 +80,8 @@ int main(int argc, char * argv[]) {
 #ifdef ENTROPY
             auto function = [](const POMDP::Belief & b) {
                 double e = 0.0;
-                for ( auto v : b )
-                    e += v * std::log(v);
+                for ( auto v : b ) {
+                    if ( checkDifferentSmall(v, 0.0) ) e += v * std::log(v);
                 return e;
             };
             auto rtbss = RTBSSb<decltype(model)>(model, 0, function);
