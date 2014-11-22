@@ -95,8 +95,8 @@ void makeExperimentRTBSS(
 
             rew = ifNotIRGuess(rew, s, solver);
 
-            totalReward            += rew;
-            timestepTotalReward[i] += rew;
+            totalReward              += rew;
+            timestepTotalReward[i-1] += rew;
             if ( experiment == 1 )
                 avgReward           = totalReward;
             else

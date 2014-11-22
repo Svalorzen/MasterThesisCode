@@ -84,8 +84,8 @@ void makeMultiExperimentPOMCP(
                 rew += ( solvers[p].getGuess() == pos[p] );
             }
 
-            totalReward            += rew;
-            timestepTotalReward[i] += rew;
+            totalReward              += rew;
+            timestepTotalReward[i-1] += rew;
             if ( experiment == 1 )
                 avgReward           = totalReward;
             else
