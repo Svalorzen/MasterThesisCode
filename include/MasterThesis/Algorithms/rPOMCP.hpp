@@ -222,7 +222,12 @@ size_t rPOMCP<M>::runSimulation(unsigned horizon) {
         simulate(graph_, graph_.sampleBelief(), 0);
 
     auto begin = std::begin(graph_.children);
-    return std::distance(begin, findBestA(begin, std::end(graph_.children)));
+    size_t bestA = std::distance(begin, findBestA(begin, std::end(graph_.children)));
+
+    // Since we do not update the root value in simulate,
+    // we do it here.
+    graph_.V = graph_.children[bestA].V;
+    return bestA;
 }
 
 template <typename M>
@@ -273,7 +278,9 @@ double rPOMCP<M>::simulate(BeliefNode & b, size_t s, unsigned depth) {
     aNode.V += ( immAndFutureRew - aNode.V ) / static_cast<double>(aNode.N);
 
     // At this point the current beliefNode has a correct estimate of its
-    // own entropy. What it needs to do is select its best action.
+    // own entropy. What it needs to do is select its best action. Although
+    // this is not needed for the top node.
+    if ( depth == 0 ) return 0.0;
 
     // Here we decide what to transmit to the upper level. In case this
     // node has not been explored enough, then we simply pass on the new
