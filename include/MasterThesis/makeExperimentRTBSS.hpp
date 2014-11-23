@@ -77,9 +77,6 @@ void makeExperimentRTBSS(
         std::vector<size_t> trajectory;
         if ( useTrajectory ) {
             trajectory = makeTrajectory(model, modelHorizon + 1, modelBelief);
-            std::cout << "TRAJECTORY: ";
-            for ( auto s : trajectory ) std::cout << "[" << s << "]";
-            std::cout << "\n";
         }
 
         for ( unsigned i = 1; i <= modelHorizon; ++i ) {
