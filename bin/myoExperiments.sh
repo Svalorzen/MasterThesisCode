@@ -20,11 +20,11 @@ PS3='Please enter your choice: '
 wSize=3
 iState=6
 horiz=10
-nExp=3000
-iters=1e4
+nExp=1000
+iters=1e6
 
 COLUMNS=1
-# Should be 20 options (2 + 2 + 4 + 6 + 6)
+# Should be 16 options (2 + 2 + 4 + 2 + 6)
 options=(
     "Myopic POMCP-IR, MoB"
     "5-Hor  POMCP-IR, MoB"
@@ -38,11 +38,7 @@ options=(
     "5-Hor  RTBSSb,   Entropy"
 
     "Myopic rPOMCP,   MoB,     k=1"
-    "Myopic rPOMCP,   MoB,     k=500"
-    "Myopic rPOMCP,   MoB,     k=10000"
     "Myopic rPOMCP,   Entropy, k=1"
-    "Myopic rPOMCP,   Entropy, k=500"
-    "Myopic rPOMCP,   Entropy, k=10000"
     "5-Hor  rPOMCP,   MoB,     k=1"
     "5-Hor  rPOMCP,   MoB,     k=500"
     "5-Hor  rPOMCP,   MoB,     k=10000"
@@ -89,21 +85,9 @@ do
         "Myopic rPOMCP,   MoB,     k=1")
             name='myoMB'; solver=1; solverHorizon=1; k=1; break
             ;;
-        "Myopic rPOMCP,   MoB,     k=500")
-            name='myoMB'; solver=1; solverHorizon=1; k=500; break
-            ;;
-        "Myopic rPOMCP,   MoB,     k=10000")
-            name='myoMB'; solver=1; solverHorizon=1; k=10000; break
-            ;;
 
         "Myopic rPOMCP,   Entropy, k=1")
             name='myo';   solver=1; solverHorizon=1; k=1; break
-            ;;
-        "Myopic rPOMCP,   Entropy, k=500")
-            name='myo';   solver=1; solverHorizon=1; k=500; break
-            ;;
-        "Myopic rPOMCP,   Entropy, k=10000")
-            name='myo';   solver=1; solverHorizon=1; k=10000; break
             ;;
 
         "5-Hor  rPOMCP,   MoB,     k=1")
