@@ -68,20 +68,20 @@ void makeMultiExperimentPOMCP(
         }
 
         for ( unsigned i = 1; i <= modelHorizon; ++i ) {
-            double rew;
+            double rew = 0.0;
 #ifdef VISUALIZE
             auto oldp = pos;
 #endif
-            // Extract observations and rewards
+            // Extract observations and rewards, and update positions of targets.
             for ( unsigned p = 0; p < numTargets; ++p ) {
+                rew += ( solvers[p].getGuess() == pos[p] );
+
                 if ( useTrajectory ) {
                     pos[p] = trajectories[p][i];
-                    obs[p] = model.sampleOR( trajectories[p][i-1], a, trajectories[p][i] );
+                    std::tie(obs[p], std::ignore) = model.sampleOR( trajectories[p][i-1], a, trajectories[p][i] );
                 }
                 else
                     std::tie(pos[p], obs[p], std::ignore) = model.sampleSOR( pos[p], a );
-
-                rew += ( solvers[p].getGuess() == pos[p] );
             }
 
             totalReward              += rew;

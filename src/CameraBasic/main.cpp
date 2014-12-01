@@ -8,6 +8,7 @@
 #include <MasterThesis/CameraBasic/cameraBasicProblem.hpp>
 #include <MasterThesis/makeExperimentPOMCP.hpp>
 #include <MasterThesis/makeExperimentRTBSS.hpp>
+#include <MasterThesis/makeMultiExperimentPOMCP.hpp>
 
 #include <iostream>
 #include <fstream>
@@ -19,7 +20,7 @@ int main(int argc, char * argv[]) {
     registerSigInt();
 
     if ( argc > 1 && std::string(argv[1]) == "help" ) {
-        std::cout << "solver     ==> 1: rPOMCP; 3: RTBSSb\n"
+        std::cout << "solver     ==> 1: rPOMCP; 3: RTBSSb; 4: rPOMCP multi\n"
                      "gridSize   ==> width/height of the room\n"
                      "initState  ==> the initial state, or gridSize^2+1 for uniform\n"
                      "solverHor  ==> the solver horizon\n"
@@ -27,12 +28,13 @@ int main(int argc, char * argv[]) {
                      "iterations ==> the number of iterations for POMCP\n"
                      "k          ==> the max trigger for rPOMCP\n"
                      "numExp     ==> number of episodes to do\n"
-                     "filename   ==> where to save results\n";
+                     "filename   ==> where to save results\n"
+                     "[nrPpl]    ==> number of people in multi experiment\n";
         return 0;
     }
 
     if ( argc < 10 ) {
-        std::cout << "Usage: " << argv[0] << " [help] solver gridSize initState solverHor modelHor iterations k numExp filename\n";
+        std::cout << "Usage: " << argv[0] << " [help] solver gridSize initState solverHor modelHor iterations k numExp filename nrPpl\n";
         return 0;
     }
 
@@ -45,6 +47,15 @@ int main(int argc, char * argv[]) {
     unsigned k              = std::stod(argv[7]);
     unsigned numExp         = std::stoi(argv[8]);
     std::string filename    = argv[9];
+    unsigned nrPpl          = 1;
+
+    if ( solver == 4 ) {
+        if ( argc < 11 ) {
+            std::cout << "Usage: " << argv[0] << " [help] solver gridSize initState solverHor modelHor iterations k numExp filename nrPpl\n";
+            return 0;
+        }
+        nrPpl               = std::stoi(argv[10]);
+    }
 
     double discount = 0.9;
 
@@ -93,6 +104,15 @@ int main(int argc, char * argv[]) {
 #endif
             // We use trajectories so targets move in a realistic way
             makeExperimentRTBSS(numExp, modelHor, model, belief, solverHor, rtbss, belief, filename, true);
+            break;
+        }
+        case 4: {
+            std::vector<rPOMCP<decltype(model)>> solvers;
+            solvers.reserve(nrPpl);
+            for ( unsigned i = 0; i < nrPpl; ++i )
+                solvers.emplace_back(model, 1000, iterations, 5, k);
+
+            makeMultiExperimentPOMCP(numExp, nrPpl, modelHor, model, belief, solverHor, solvers, belief, filename, true);
             break;
         }
     }
