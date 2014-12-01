@@ -1,5 +1,5 @@
-#ifndef MASTER_THESIS_CAMERA_BASIC_MODEL_HEADER_FILE
-#define MASTER_THESIS_CAMERA_BASIC_MODEL_HEADER_FILE
+#ifndef MASTER_THESIS_CAMERA_PATH_MODEL_HEADER_FILE
+#define MASTER_THESIS_CAMERA_PATH_MODEL_HEADER_FILE
 
 #include <cstddef>
 #include <tuple>
@@ -8,11 +8,18 @@
 
 #include <iostream>
 
-class CameraBasicModel {
+// In this model we multiply the statespace of the CameraBasicModel
+// by four. In this way we can track the way a target is moving, and
+// assume that if it was moving in a particular direction, than it is
+// more probable that it will follow it rather than change it. This
+// increase in state space does not increase the branching factor of
+// the model, so the MCTS family of algorithms should not be hindered
+// by it.
+class CameraPathModel {
     public:
         enum { UP = 0, RIGHT = 1, DOWN = 2, LEFT = 3 };
 
-        CameraBasicModel(unsigned gridSize, double discount);
+        CameraPathModel(unsigned gridSize, double discount);
 
         size_t getS() const;
         size_t getA() const;
@@ -48,10 +55,9 @@ class CameraBasicModel {
 
         void visualize(const std::vector<size_t> & positions, size_t camera) const;
 
-        // This function is here so that we can keep the
-        // same code for performing experiments as CameraPath
-        // is using
-        size_t getTrueState(size_t s) const { return s; }
+        // We use this so that we can let guessing methods guess the target
+        // position, not target + direction.
+        size_t getTrueState(size_t s) const { return convertToNormalState(s); }
     private:
         size_t sampleTransition(size_t) const;
         // This is the function that creates non-fully-random transitions
@@ -60,6 +66,13 @@ class CameraBasicModel {
         // he selects a new target and so on.
         size_t sampleTrajectoryTransition(size_t) const;
         size_t sampleObservation(size_t, size_t) const;
+
+        // This function tells us which is the preferred direction
+        // that a target wants to move.
+        int getPreferredDirectionFromState(size_t) const;
+        // This function removes the preferred part from the state
+        // to keep previous code.
+        size_t convertToNormalState(size_t) const;
 
         size_t getNextDirState(size_t, unsigned) const;
         size_t checkCameraField(size_t, size_t) const;

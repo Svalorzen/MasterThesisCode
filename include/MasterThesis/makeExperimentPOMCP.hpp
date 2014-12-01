@@ -84,7 +84,7 @@ void makeExperimentPOMCP(
             else
                 std::tie(s1, o, rew) = model.sampleSOR(s, a);
 
-            rew = ifNotIRGuess(rew, s, solver);
+            rew = ifNotIRGuess(rew, s, solver, model);
 
             totalReward              += rew;
             timestepTotalReward[i-1] += rew;

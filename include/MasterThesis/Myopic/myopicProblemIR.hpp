@@ -27,6 +27,10 @@ class MyopicModelIR {
         std::pair<size_t, size_t> decodeAction(size_t) const;
         size_t encodeAction(size_t, size_t) const;
 
+        // This function is here so that we can keep the
+        // same code for performing experiments as CameraPath
+        // is using
+        size_t getTrueState(size_t s) const { return s; }
     private:
         size_t sampleTransition(size_t) const;
         size_t sampleObservation(size_t, size_t) const;

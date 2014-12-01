@@ -74,7 +74,7 @@ void makeMultiExperimentPOMCP(
 #endif
             // Extract observations and rewards, and update positions of targets.
             for ( unsigned p = 0; p < numTargets; ++p ) {
-                rew += ( solvers[p].getGuess() == pos[p] );
+                rew += ( model.getTrueState(solvers[p].getGuess()) == model.getTrueState(pos[p]) );
 
                 if ( useTrajectory ) {
                     pos[p] = trajectories[p][i];

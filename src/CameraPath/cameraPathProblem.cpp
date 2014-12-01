@@ -1,11 +1,14 @@
-#include <MasterThesis/CameraBasic/cameraBasicProblem.hpp>
+#include <MasterThesis/CameraPath/cameraPathProblem.hpp>
 
 #include <cassert>
 #include <AIToolbox/Impl/Seeder.hpp>
 
 constexpr int cameraField = 10;
+constexpr int preferredPathProbabilityD20 = 14;
+constexpr double preferredPathProbability = 0.7;
+constexpr double nonPreferredPathProbability = 0.1;
 
-CameraBasicModel::CameraBasicModel(unsigned gridSize, double d) : gridSize_(gridSize), gridCells_(gridSize_*gridSize_), S(gridCells_+1),
+CameraPathModel::CameraPathModel(unsigned gridSize, double d) : gridSize_(gridSize), gridCells_(gridSize_*gridSize_), S(gridCells_*4+1),
                                                                   discount_(d), rand_(AIToolbox::Impl::Seeder::getSeed())
 {
     if ( gridSize < 1 ) throw std::invalid_argument("This grid size is not allowed: " + std::to_string(gridSize));
@@ -38,21 +41,26 @@ CameraBasicModel::CameraBasicModel(unsigned gridSize, double d) : gridSize_(grid
 }
 
 // INFO FUNCTIONS
-size_t CameraBasicModel::getS() const { return S; }
+size_t CameraPathModel::getS() const { return S; }
 
-size_t CameraBasicModel::getA() const {
+size_t CameraPathModel::getA() const {
+#ifdef HALF_VISIBILITY
+    return (A+1)/2;
+#else
     return A;
-//    return (A+1)/2;
+#endif
 }
 
-size_t CameraBasicModel::getO() const { return cameraField * cameraField + 1; }
-double CameraBasicModel::getDiscount() const { return discount_; }
+size_t CameraPathModel::getO() const { return cameraField * cameraField + 1; }
+double CameraPathModel::getDiscount() const { return discount_; }
 
 // SAMPLING FUNCTIONS
 
-std::tuple<size_t, size_t, double> CameraBasicModel::sampleSOR(size_t s, size_t a) const {
-    //a *= 2;
-    //if ( !(A % 2) && ( a / cameraSize_ ) % 2 ) ++a;
+std::tuple<size_t, size_t, double> CameraPathModel::sampleSOR(size_t s, size_t a) const {
+#ifdef HALF_VISIBILITY
+    a *= 2;
+    if ( !(A % 2) && ( a / cameraSize_ ) % 2 ) ++a;
+#endif
 
     size_t s1 = sampleTransition(s);
     size_t o = sampleObservation(s1, a);
@@ -60,36 +68,56 @@ std::tuple<size_t, size_t, double> CameraBasicModel::sampleSOR(size_t s, size_t 
     return std::make_tuple(s1, o, 0.0);
 }
 
-std::tuple<size_t, double> CameraBasicModel::sampleOR(size_t, size_t a, size_t s1) const {
-//    a *= 2;
-//    if ( !(A % 2) && ( a / cameraSize_ ) % 2 ) ++a;
+std::tuple<size_t, double> CameraPathModel::sampleOR(size_t, size_t a, size_t s1) const {
+#ifdef HALF_VISIBILITY
+    a *= 2;
+    if ( !(A % 2) && ( a / cameraSize_ ) % 2 ) ++a;
+#endif
 
     return std::make_tuple(sampleObservation(s1, a), 0.0);
 }
 
-std::tuple<size_t, double> CameraBasicModel::sampleSR(size_t s, size_t) const {
+std::tuple<size_t, double> CameraPathModel::sampleSR(size_t s, size_t) const {
     return std::make_tuple(sampleTrajectoryTransition(s), 0.0);
 }
 
 // IMPLEMENTATIONS
 
-size_t CameraBasicModel::sampleTransition(size_t s) const {
+// Modified from Basic..
+size_t CameraPathModel::sampleTransition(size_t s) const {
     static std::uniform_int_distribution<unsigned> dist1(1, 20);
-    static std::uniform_int_distribution<unsigned> dist2(0, 3);
+    static std::uniform_int_distribution<unsigned> dist2(1, 3);
 
     // From outside
     if ( s == S-1 ) {
         // 0.05 chance for both
         auto dice = dist1(rand_);
-        if ( dice == 19 ) return entranceA_;
-        if ( dice == 20 ) return entranceB_;
+        // Start off walking left
+        if ( dice == 19 ) return entranceA_ + gridCells_ * LEFT;
+        if ( dice == 20 ) return entranceB_ + gridCells_ * LEFT;
         return s;
     }
 
-    return getNextDirState(s, dist2(rand_));
+    auto preferredDirection = getPreferredDirectionFromState(s);
+    auto normalState = convertToNormalState(s);
+    auto dice = dist1(rand_);
+
+    auto newDirection = preferredDirection;
+
+    // 0.85 % of choosing preferred direction.
+    if ( dice > preferredPathProbabilityD20 ) {
+        newDirection = dist2(rand_);
+        // This we do since dist2 does not produce 0.
+        if ( newDirection == preferredDirection ) newDirection = 0;
+    }
+
+    auto newState = getNextDirState(normalState, newDirection);
+
+    if ( newState == S-1 ) return newState;
+    return newState + gridCells_ * newDirection;
 }
 
-size_t CameraBasicModel::sampleTrajectoryTransition(size_t s) const {
+size_t CameraPathModel::sampleTrajectoryTransition(size_t s) const {
     static std::uniform_int_distribution<unsigned> dist1(0, 9);
     static std::uniform_int_distribution<unsigned> distg(0, gridSize_-1);
     static size_t xg = 0, yg = 0;
@@ -115,10 +143,12 @@ double computePrecision(int puc, int data) {
     return 1.0 - ( std::abs(puc - data/2 - 1) / (double) data );
 }
 
-size_t CameraBasicModel::sampleObservation(size_t s1, size_t a) const {
+size_t CameraPathModel::sampleObservation(size_t s1, size_t a) const {
     static std::uniform_int_distribution<unsigned> dist1(0, 4);
     static std::uniform_real_distribution<double>  prob(0, 1);
 
+    // Modified this line from Basic
+    s1 = convertToNormalState(s1);
     size_t positionUnderCamera = checkCameraField(a, s1);
 
     // If the person is under the camera, we see it more correctly
@@ -143,7 +173,9 @@ size_t CameraBasicModel::sampleObservation(size_t s1, size_t a) const {
 
 // PROBABILITIES
 
-double CameraBasicModel::getObservationProbability(size_t s1, size_t a, size_t o) const {
+double CameraPathModel::getObservationProbability(size_t s1, size_t a, size_t o) const {
+    // Changed this line from basic
+    s1 = convertToNormalState(s1);
     size_t positionUnderCamera = checkCameraField(a, s1);
 
     // If the target is not under the camera, we cannot see it
@@ -164,22 +196,29 @@ double CameraBasicModel::getObservationProbability(size_t s1, size_t a, size_t o
     return retvalue;
 }
 
-double CameraBasicModel::getTransitionProbability(size_t s, size_t, size_t s1) const {
+// Changed from Basic
+double CameraPathModel::getTransitionProbability(size_t s, size_t, size_t s1) const {
     if ( s == S-1 ) {
         if ( s1 == s ) return 0.9;
-        if ( s1 == entranceA_ || s1 == entranceB_ ) return 0.05;
+        if ( s1 == entranceA_ + gridCells_ * LEFT || s1 == entranceB_ + gridCells_ * LEFT ) return 0.05;
         return 0.0;
     }
-    double retvalue = 0.0;
-    for ( unsigned i = 0; i < 4; ++i ) {
-        if ( s1 == getNextDirState(s, i) ) retvalue += 0.25;
+    auto preferredDirection = getPreferredDirectionFromState(s);
+    auto normalState = convertToNormalState(s);
+
+    if ( s1 == getNextDirState(normalState, preferredDirection) + gridCells_ * preferredDirection)
+        return preferredPathProbability;
+
+    for ( int i = 0; i < 4; ++i ) {
+        if ( i == preferredDirection ) continue;
+        if ( s1 == getNextDirState(normalState, i) + gridCells_ * i ) return nonPreferredPathProbability;
     }
-    return retvalue;
+    return 0.0;
 }
 
 // MOVEMENT AND CAMERA CODE
 
-size_t CameraBasicModel::getNextDirState(size_t s, unsigned dir) const {
+size_t CameraPathModel::getNextDirState(size_t s, unsigned dir) const {
     size_t s1;
     switch ( dir ) {
         case 0:
@@ -201,7 +240,7 @@ size_t CameraBasicModel::getNextDirState(size_t s, unsigned dir) const {
     return s1;
 }
 
-size_t CameraBasicModel::checkCameraField(size_t a, size_t s) const {
+size_t CameraPathModel::checkCameraField(size_t a, size_t s) const {
     assert(a < A);
     if ( s == S - 1 ) return 0;
 
@@ -221,17 +260,19 @@ size_t CameraBasicModel::checkCameraField(size_t a, size_t s) const {
     return positionUnderCamera;
 }
 
-bool CameraBasicModel::isTerminal(size_t) const { return false; }
+bool CameraPathModel::isTerminal(size_t) const { return false; }
 
-void CameraBasicModel::visualize(const std::vector<size_t> & positions, size_t camera) const {
-//    camera *= 2;
-//    if ( !(A % 2) && ( camera / cameraSize_ ) % 2 ) ++camera;
+void CameraPathModel::visualize(const std::vector<size_t> & positions, size_t camera) const {
+#ifdef HALF_VISIBILITY
+    camera *= 2;
+    if ( !(A % 2) && ( camera / cameraSize_ ) % 2 ) ++camera;
+#endif
 
     for ( unsigned y = 0; y < gridSize_; ++y ) {
         for ( unsigned x = 0; x < gridSize_; ++x ) {
             size_t s = coordToState(x, y);
             unsigned counter = 0;
-            for( auto x : positions ) if ( x == s ) ++counter;
+            for( auto x : positions ) if ( convertToNormalState(x) == s ) ++counter;
             if ( counter ) std::cout << counter << " ";
             else {
                 if ( checkCameraField(camera, s) != 0 ) std::cout << "* ";
@@ -240,4 +281,12 @@ void CameraBasicModel::visualize(const std::vector<size_t> & positions, size_t c
         }
         std::cout << "\n";
     }
+}
+
+int CameraPathModel::getPreferredDirectionFromState(size_t s) const {
+    return s == S-1 ? 0 : s / gridCells_;
+}
+
+size_t CameraPathModel::convertToNormalState(size_t s) const {
+    return s == S-1 ? s : s % gridCells_;
 }

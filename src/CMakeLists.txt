@@ -12,13 +12,13 @@ option(VISUALIZE_CAMERAS "Activates Camera world visualization" OFF)
 
 # MYOPIC EXECUTABLES:
 
-# add_executable(myo   ./Myopic/main.cpp ./Myopic/myopicProblem.cpp ./Myopic/myopicProblemIR.cpp ./Algorithm/TreeNodes.cpp)
-# add_executable(myoMB ./Myopic/main.cpp ./Myopic/myopicProblem.cpp ./Myopic/myopicProblemIR.cpp ./Algorithm/TreeNodes.cpp)
-#
-# set_target_properties(myo     PROPERTIES COMPILE_DEFINITIONS "ENTROPY")
-#
-# target_link_libraries(myo          ${AIPOMDP} ${LPSOLVE_LIBRARIES} ${AIMDP})
-# target_link_libraries(myoMB        ${AIPOMDP} ${LPSOLVE_LIBRARIES} ${AIMDP})
+ add_executable(myo   ./Myopic/main.cpp ./Myopic/myopicProblem.cpp ./Myopic/myopicProblemIR.cpp ./Algorithm/TreeNodes.cpp)
+ add_executable(myoMB ./Myopic/main.cpp ./Myopic/myopicProblem.cpp ./Myopic/myopicProblemIR.cpp ./Algorithm/TreeNodes.cpp)
+
+ set_target_properties(myo     PROPERTIES COMPILE_DEFINITIONS "ENTROPY")
+
+ target_link_libraries(myo          ${AIPOMDP} ${LPSOLVE_LIBRARIES} ${AIMDP})
+ target_link_libraries(myoMB        ${AIPOMDP} ${LPSOLVE_LIBRARIES} ${AIMDP})
 
 # CAMERA BASIC EXECUTABLES:
 
@@ -32,6 +32,19 @@ option(VISUALIZE_CAMERAS "Activates Camera world visualization" OFF)
  
  target_link_libraries(cameraBasic      ${AIPOMDP} ${LPSOLVE_LIBRARIES} ${AIMDP})
  target_link_libraries(cameraBasicMB    ${AIPOMDP} ${LPSOLVE_LIBRARIES} ${AIMDP})
+
+# CAMERA PATH EXECUTABLES:
+
+ add_executable(cameraPath   ./CameraPath/main.cpp ./CameraPath/cameraPathProblem.cpp ./Algorithm/TreeNodes.cpp)
+ add_executable(cameraPathMB ./CameraPath/main.cpp ./CameraPath/cameraPathProblem.cpp ./Algorithm/TreeNodes.cpp)
+ 
+ set_target_properties(cameraPath PROPERTIES COMPILE_DEFINITIONS "ENTROPY")
+ if ( VISUALIZE_CAMERAS )
+     set_property( TARGET cameraPath cameraPathMB APPEND PROPERTY COMPILE_DEFINITIONS "VISUALIZE")
+ endif()
+ 
+ target_link_libraries(cameraPath      ${AIPOMDP} ${LPSOLVE_LIBRARIES} ${AIMDP})
+ target_link_libraries(cameraPathMB    ${AIPOMDP} ${LPSOLVE_LIBRARIES} ${AIMDP})
 
 #
 # add_executable(multiCameras mainMultiCameras.cpp cameraProblem.cpp ./BeliefNode.cpp)
