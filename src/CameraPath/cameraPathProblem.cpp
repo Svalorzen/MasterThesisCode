@@ -206,13 +206,10 @@ double CameraPathModel::getTransitionProbability(size_t s, size_t, size_t s1) co
     auto preferredDirection = getPreferredDirectionFromState(s);
     auto normalState = convertToNormalState(s);
 
-    if ( s1 == getNextDirState(normalState, preferredDirection) + gridCells_ * preferredDirection)
-        return preferredPathProbability;
+    for ( int i = 0; i < 4; ++i )
+        if ( s1 == getNextDirState(normalState, i) + gridCells_ * i )
+            return i == preferredDirection ? preferredPathProbability : nonPreferredPathProbability;
 
-    for ( int i = 0; i < 4; ++i ) {
-        if ( i == preferredDirection ) continue;
-        if ( s1 == getNextDirState(normalState, i) + gridCells_ * i ) return nonPreferredPathProbability;
-    }
     return 0.0;
 }
 
