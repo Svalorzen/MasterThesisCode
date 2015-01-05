@@ -76,7 +76,7 @@ void makeExperimentPOMCP(
 
         for ( unsigned i = 1; i <= modelHorizon; ++i ) {
             size_t s1, o; double rew;
-            
+
             if ( useTrajectory ) {
                 s1 = trajectory[i];
                 std::tie(o, rew) = model.sampleOR(trajectory[i-1], a, trajectory[i]);

@@ -33,13 +33,14 @@ std::tuple<size_t, size_t, double> FiniteBudgetModelIR::sampleSOR(size_t s, size
 
     size_t o = sampleObservation(s1, an);
 
-    return std::make_tuple(s1, o, ap == s);
+    return std::make_tuple(s1, o, ap == trueS);
 }
 
 std::tuple<size_t, double> FiniteBudgetModelIR::sampleOR(size_t s, size_t a, size_t s1) const {
     size_t an, ap;
     std::tie(an, ap) = decodeAction(a);
-    return std::make_tuple(sampleObservation(s1, an), s == ap);
+    auto trueS = convertToNormalState(s);
+    return std::make_tuple(sampleObservation(s1, an), trueS == ap);
 }
 
 std::tuple<size_t, double> FiniteBudgetModelIR::sampleSR(size_t s, size_t a) const {
@@ -51,7 +52,7 @@ std::tuple<size_t, double> FiniteBudgetModelIR::sampleSR(size_t s, size_t a) con
 
     size_t trueS1 = sampleTrajectoryTransition(trueS);
     auto s1 = makeState(trueS1, an == worldWidth_ ? budget : budget + 1);
-    return std::make_tuple(s1, s == ap);
+    return std::make_tuple(s1, trueS == ap);
 }
 
 // IMPLEMENTATIONS
@@ -80,7 +81,6 @@ size_t FiniteBudgetModelIR::sampleObservation(size_t s1, size_t a) const {
     auto dice = prob(rand_);
     // If there's no more budget, or we don't look..
     if ( budget > maxBudget_ || a == worldWidth_ ) {
-        std::cout << ( budget > maxBudget_ ? "OverBudget\n" : "Not Looking\n");
         return dice > 0.5;
     }
 
@@ -122,8 +122,9 @@ double FiniteBudgetModelIR::getTransitionProbability(size_t s, size_t, size_t s1
 double FiniteBudgetModelIR::getExpectedReward(size_t s, size_t a, size_t) const {
     size_t ap;
     std::tie(std::ignore, ap) = decodeAction(a);
+    auto trueS = convertToNormalState(s);
 
-    return s == ap;
+    return trueS == ap;
 }
 
 bool FiniteBudgetModelIR::isTerminal(size_t) const { return false; }
