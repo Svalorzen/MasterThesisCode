@@ -34,12 +34,13 @@ int main(int argc, char * argv[]) {
                      "k          ==> the max trigger for rPOMCP\n"
                      "numExp     ==> number of episodes to do\n"
                      "filename   ==> where to save results\n"
-                     "budget     ==> number of available observing actions\n";
+                     "budget     ==> number of available observing actions\n"
+                     "leftP      ==> probability of the target to transition to the left\n";
         return 0;
     }
 
-    if ( argc < 10 ) {
-        std::cout << "Usage: " << argv[0] << " [help] solver worldWidth initState solverHor modelHor iterations k numExp filename budget\n";
+    if ( argc < 12 ) {
+        std::cout << "Usage: " << argv[0] << " [help] solver worldWidth initState solverHor modelHor iterations k numExp filename budget leftP\n";
         return 0;
     }
 
@@ -49,17 +50,13 @@ int main(int argc, char * argv[]) {
     unsigned solverHor      = std::stoi(argv[4]);
     unsigned modelHor       = std::stoi(argv[5]);
     unsigned iterations     = std::stod(argv[6]);
-    unsigned k              = std::stod(argv[7]);
+    unsigned k              = std::stoi(argv[7]);
     unsigned numExp         = std::stoi(argv[8]);
     std::string filename    = argv[9];
     unsigned budget         = std::stoi(argv[10]);
+    double leftP            = std::stod(argv[11]);
 
     double discount = 0.9;
-
-    if ( argc < 7 ) {
-        std::cout << "Usage: " << argv[0] << " gridSize pomcpHor horizon numExp samples maxK\n";
-        return 0;
-    }
 
     POMDP::Belief belief(worldWidth * (budget + 2), 0.0);
     if ( initState >= worldWidth )
@@ -74,33 +71,19 @@ int main(int argc, char * argv[]) {
     // bool even = !(gridSize % 2);
     // belief[gridSize * (gridSize-1)/2 - even] = 1.0;
 
-    double leftP = 0.6;
+    FiniteBudgetModel model(worldWidth, leftP, budget, discount);
 
-    FiniteBudgetModelIR model(worldWidth, leftP, budget, discount);
+    PRINT(model.getA());
+    PRINT(model.getS());
+    PRINT(model.getO());
 
-    PRINT(model.getTransitionProbability(1, 2, 3));
-    PRINT(model.getTransitionProbability(1, 2, 2));
-    PRINT(model.getTransitionProbability(0, 2, 3));
-    PRINT(model.getTransitionProbability(3, 2, 0));
-    PRINT(model.getTransitionProbability(3, 2, 3));
+    size_t s = 0, a;
+    for ( int i = 0; i < 50; ++i ) {
+        std::cin >> a;
+        std::tie(s, std::ignore) = model.sampleSR(s, a);
+        model.visualize(s, a);
 
-
-    size_t state = 0;
-    PRINT((state = std::get<0>(model.sampleSOR(state, 8))));
-    PRINT(model.getRemainingBudget(state));
-    PRINT(model.convertToNormalState(state));
-
-    PRINT((state = std::get<0>(model.sampleSOR(state, 8))));
-    PRINT(model.getRemainingBudget(state));
-    PRINT(model.convertToNormalState(state));
-
-    PRINT((state = std::get<0>(model.sampleSOR(state, 8))));
-    PRINT(model.getRemainingBudget(state));
-    PRINT(model.convertToNormalState(state));
-
-    PRINT((state = std::get<0>(model.sampleSOR(state, 8))));
-    PRINT(model.getRemainingBudget(state));
-    PRINT(model.convertToNormalState(state));
+    }
 
     return 0;
 }

@@ -31,12 +31,13 @@ int main(int argc, char * argv[]) {
                      "k          ==> the max trigger for rPOMCP\n"
                      "numExp     ==> number of episodes to do\n"
                      "filename   ==> where to save results\n"
-                     "budget     ==> number of available observing actions\n";
+                     "budget     ==> number of available observing actions\n"
+                     "leftP      ==> probability of the target to transition to the left\n";
         return 0;
     }
 
-    if ( argc < 10 ) {
-        std::cout << "Usage: " << argv[0] << " [help] solver worldWidth initState solverHor modelHor iterations k numExp filename budget\n";
+    if ( argc < 12 ) {
+        std::cout << "Usage: " << argv[0] << " [help] solver worldWidth initState solverHor modelHor iterations k numExp filename budget leftP\n";
         return 0;
     }
 
@@ -50,27 +51,16 @@ int main(int argc, char * argv[]) {
     unsigned numExp         = std::stoi(argv[8]);
     std::string filename    = argv[9];
     unsigned budget         = std::stoi(argv[10]);
+    double leftP            = std::stod(argv[11]);
 
     double discount = 0.9;
 
-    if ( argc < 7 ) {
-        std::cout << "Usage: " << argv[0] << " gridSize pomcpHor horizon numExp samples maxK\n";
-        return 0;
-    }
-
     POMDP::Belief belief(worldWidth * (budget + 2), 0.0);
     if ( initState >= worldWidth )
-        for ( auto & v : belief )
-            v = 1.0 / worldWidth;
+        for ( unsigned i = 0; i < worldWidth; ++i )
+            belief[i] = 1.0 / worldWidth; // Uniform start with full budget.
     else
         belief[initState] = 1.0;
-
-    // This would set the belief to the center state,
-    // no matter the gridSize
-    //
-    // bool even = !(gridSize % 2);
-    // belief[gridSize * (gridSize-1)/2 - even] = 1.0;
-    double leftP = 0.5;
 
     switch ( solver ) {
         case 0: {

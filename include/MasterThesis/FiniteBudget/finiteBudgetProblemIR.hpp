@@ -42,6 +42,20 @@ class FiniteBudgetModelIR {
         size_t convertToNormalState(size_t) const;
         size_t getRemainingBudget(size_t) const;
 
+        void visualize(size_t s, size_t a) const {
+            size_t pos = convertToNormalState(s);
+            size_t bud = getRemainingBudget(s);
+
+            size_t an, ap;
+            std::tie(an, ap) = decodeAction(a);
+
+            for ( size_t i = 0; i < worldWidth_; ++i )
+                std::cout << ( i == pos ? '*' : '.' );
+            std::cout << "\tBudget = " << bud << "\n";
+            std::cout << "\tProbToSee (" << s << "," << an << ",1) = " << getObservationProbability(s, an, 1) <<"\n";
+            std::cout << "\tAN = " << an << "\tAP = " << ap <<"\n";
+        }
+
         bool isTerminal(size_t) const;
     private:
         size_t sampleTransition(size_t) const;

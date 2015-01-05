@@ -27,9 +27,7 @@ std::tuple<size_t, size_t, double> FiniteBudgetModel::sampleSOR(size_t s, size_t
     auto trueS = convertToNormalState(s);
     auto budget = getRemainingBudget(s);
 
-    std::cout << "SAMPLING TRANSITION WITH TRUES = " << trueS << "\n";
     size_t trueS1 = sampleTransition(trueS);
-    std::cout << "RESULT IS TRUES1 = " << trueS1 << "\n";
     auto s1 = makeState(trueS1, a == worldWidth_ ? budget : budget + 1);
 
     size_t o = sampleObservation(s1, a);
@@ -46,7 +44,7 @@ std::tuple<size_t, double> FiniteBudgetModel::sampleSR(size_t s, size_t a) const
     auto budget = getRemainingBudget(s);
 
     size_t trueS1 = sampleTrajectoryTransition(trueS);
-    auto s1 = makeState(trueS1, a == S ? budget : budget + 1);
+    auto s1 = makeState(trueS1, a == worldWidth_ ? budget : budget + 1);
     return std::make_tuple(s1, 0.0);
 }
 
@@ -76,7 +74,6 @@ size_t FiniteBudgetModel::sampleObservation(size_t s1, size_t a) const {
     auto dice = prob(rand_);
     // If there's no more budget, or we don't look..
     if ( budget > maxBudget_ || a == worldWidth_ ) {
-        std::cout << ( budget > maxBudget_ ? "OverBudget\n" : "Not Looking\n");
         return dice > 0.5;
     }
 
@@ -93,7 +90,7 @@ size_t FiniteBudgetModel::sampleObservation(size_t s1, size_t a) const {
 double FiniteBudgetModel::getObservationProbability(size_t s1, size_t a, size_t o) const {
     auto budget = getRemainingBudget(s1);
     // If there's no more budget, we return randomly
-    if ( budget > maxBudget_ ) return 0.5;
+    if ( budget > maxBudget_ || a == worldWidth_ ) return 0.5;
 
     auto trueS1 = convertToNormalState(s1);
     // If we didn't see the person..
@@ -126,8 +123,6 @@ size_t FiniteBudgetModel::getRemainingBudget(size_t s) const {
 }
 
 size_t FiniteBudgetModel::makeState(size_t s, size_t b) const {
-    std::cout << "MAKING STATE WITH S = " << s << " AND BUDGET = " << b <<"\n";
     b = std::min(b, maxBudget_+1);
-    std::cout << "RESULT IS " << s + b * worldWidth_ << "\n";
     return s + b * worldWidth_;
 }

@@ -97,7 +97,7 @@ size_t FiniteBudgetModelIR::sampleObservation(size_t s1, size_t a) const {
 double FiniteBudgetModelIR::getObservationProbability(size_t s1, size_t a, size_t o) const {
     auto budget = getRemainingBudget(s1);
     // If there's no more budget, we return randomly
-    if ( budget > maxBudget_ ) return 0.5;
+    if ( budget > maxBudget_ || a == worldWidth_ ) return 0.5;
 
     auto trueS1 = convertToNormalState(s1);
     // If we didn't see the person..
