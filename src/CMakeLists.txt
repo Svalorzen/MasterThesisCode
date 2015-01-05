@@ -24,12 +24,12 @@ option(VISUALIZE_CAMERAS "Activates Camera world visualization" OFF)
 
  add_executable(cameraBasic   ./CameraBasic/main.cpp ./CameraBasic/cameraBasicProblem.cpp ./Algorithm/TreeNodes.cpp)
  add_executable(cameraBasicMB ./CameraBasic/main.cpp ./CameraBasic/cameraBasicProblem.cpp ./Algorithm/TreeNodes.cpp)
- 
+
  set_target_properties(cameraBasic PROPERTIES COMPILE_DEFINITIONS "ENTROPY")
  if ( VISUALIZE_CAMERAS )
      set_property( TARGET cameraBasic cameraBasicMB APPEND PROPERTY COMPILE_DEFINITIONS "VISUALIZE")
  endif()
- 
+
  target_link_libraries(cameraBasic      ${AIPOMDP} ${LPSOLVE_LIBRARIES} ${AIMDP})
  target_link_libraries(cameraBasicMB    ${AIPOMDP} ${LPSOLVE_LIBRARIES} ${AIMDP})
 
@@ -37,14 +37,20 @@ option(VISUALIZE_CAMERAS "Activates Camera world visualization" OFF)
 
  add_executable(cameraPath   ./CameraPath/main.cpp ./CameraPath/cameraPathProblem.cpp ./Algorithm/TreeNodes.cpp)
  add_executable(cameraPathMB ./CameraPath/main.cpp ./CameraPath/cameraPathProblem.cpp ./Algorithm/TreeNodes.cpp)
- 
+
  set_target_properties(cameraPath PROPERTIES COMPILE_DEFINITIONS "ENTROPY")
  if ( VISUALIZE_CAMERAS )
      set_property( TARGET cameraPath cameraPathMB APPEND PROPERTY COMPILE_DEFINITIONS "VISUALIZE")
  endif()
- 
+
  target_link_libraries(cameraPath      ${AIPOMDP} ${LPSOLVE_LIBRARIES} ${AIMDP})
  target_link_libraries(cameraPathMB    ${AIPOMDP} ${LPSOLVE_LIBRARIES} ${AIMDP})
+
+ add_executable(ttest   ./FiniteBudget/maintest.cpp
+     ./FiniteBudget/finiteBudgetProblemIR.cpp
+     ./FiniteBudget/finiteBudgetProblem.cpp)
+
+ target_link_libraries(ttest    ${AIPOMDP} ${LPSOLVE_LIBRARIES} ${AIMDP})
 
 #
 # add_executable(multiCameras mainMultiCameras.cpp cameraProblem.cpp ./BeliefNode.cpp)

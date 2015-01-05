@@ -1,11 +1,13 @@
 #include <AIToolbox/ProbabilityUtils.hpp>
 
-#include <AIToolbox/POMDP/Algorithms/IncrementalPruning.hpp>
+#include <AIToolbox/POMDP/Algorithms/POMCP.hpp>
+#include <AIToolbox/POMDP/Algorithms/RTBSS.hpp>
 #include <AIToolbox/POMDP/Policies/Policy.hpp>
 
 #include <MasterThesis/Algorithms/rPOMCP.hpp>
 #include <MasterThesis/Algorithms/RTBSSb.hpp>
-#include <MasterThesis/CameraPath/cameraPathProblem.hpp>
+#include <MasterThesis/FiniteBudget/finiteBudgetProblem.hpp>
+#include <MasterThesis/FiniteBudget/finiteBudgetProblemIR.hpp>
 #include <MasterThesis/makeExperimentPOMCP.hpp>
 #include <MasterThesis/makeExperimentRTBSS.hpp>
 #include <MasterThesis/makeMultiExperimentPOMCP.hpp>
@@ -20,8 +22,8 @@ int main(int argc, char * argv[]) {
     registerSigInt();
 
     if ( argc > 1 && std::string(argv[1]) == "help" ) {
-        std::cout << "solver     ==> 1: rPOMCP; 3: RTBSSb; 4: rPOMCP multi\n"
-                     "gridSize   ==> width/height of the room\n"
+        std::cout << "solver     ==> 0: POMCP(IR); 1: rPOMCP; 2: RTBSS(IR); 3: RTBSSb\n"
+                     "worldWidth ==> width of the room\n"
                      "initState  ==> the initial state, or gridSize^2+1 for uniform\n"
                      "solverHor  ==> the solver horizon\n"
                      "modelHor   ==> the length of an episode\n"
@@ -29,17 +31,17 @@ int main(int argc, char * argv[]) {
                      "k          ==> the max trigger for rPOMCP\n"
                      "numExp     ==> number of episodes to do\n"
                      "filename   ==> where to save results\n"
-                     "[nrPpl]    ==> number of people in multi experiment\n";
+                     "budget     ==> number of available observing actions\n";
         return 0;
     }
 
     if ( argc < 10 ) {
-        std::cout << "Usage: " << argv[0] << " [help] solver gridSize initState solverHor modelHor iterations k numExp filename nrPpl\n";
+        std::cout << "Usage: " << argv[0] << " [help] solver worldWidth initState solverHor modelHor iterations k numExp filename budget\n";
         return 0;
     }
 
     unsigned solver         = std::stoi(argv[1]);
-    unsigned gridSize       = std::stoi(argv[2]);
+    unsigned worldWidth     = std::stoi(argv[2]);
     unsigned initState      = std::stoi(argv[3]);
     unsigned solverHor      = std::stoi(argv[4]);
     unsigned modelHor       = std::stoi(argv[5]);
@@ -47,15 +49,7 @@ int main(int argc, char * argv[]) {
     unsigned k              = std::stod(argv[7]);
     unsigned numExp         = std::stoi(argv[8]);
     std::string filename    = argv[9];
-    unsigned nrPpl          = 1;
-
-    if ( solver == 4 ) {
-        if ( argc < 11 ) {
-            std::cout << "Usage: " << argv[0] << " [help] solver gridSize initState solverHor modelHor iterations k numExp filename nrPpl\n";
-            return 0;
-        }
-        nrPpl               = std::stoi(argv[10]);
-    }
+    unsigned budget         = std::stoi(argv[10]);
 
     double discount = 0.9;
 
@@ -64,13 +58,10 @@ int main(int argc, char * argv[]) {
         return 0;
     }
 
-    CameraPathModel model(gridSize, discount);
-    size_t S = model.getS();
-
-    POMDP::Belief belief(S, 0.0);
-    if ( initState == S )
+    POMDP::Belief belief(worldWidth * (budget + 2), 0.0);
+    if ( initState >= worldWidth )
         for ( auto & v : belief )
-            v = 1.0 / S;
+            v = 1.0 / worldWidth;
     else
         belief[initState] = 1.0;
 
@@ -79,16 +70,31 @@ int main(int argc, char * argv[]) {
     //
     // bool even = !(gridSize % 2);
     // belief[gridSize * (gridSize-1)/2 - even] = 1.0;
+    double leftP = 0.5;
 
     switch ( solver ) {
+        case 0: {
+            auto model = FiniteBudgetModelIR(worldWidth, leftP, budget, discount);
+            auto pomcp = POMDP::POMCP<decltype(model)>(model, 1000, iterations, 5);
+            makeExperimentPOMCP(numExp, modelHor, model, belief, solverHor, pomcp, belief, filename);
+            break;
+        }
         case 1: {
+            auto model = FiniteBudgetModel(worldWidth, leftP, budget, discount);
             auto pomcp = rPOMCP<decltype(model)>(model, 1000, iterations, 5, k);
             // We use trajectories so targets move in a realistic way
             makeExperimentPOMCP(numExp, modelHor, model, belief, solverHor, pomcp, belief, filename, true);
             break;
         }
+        case 2: {
+            auto model = FiniteBudgetModelIR(worldWidth, leftP, budget, discount);
+            auto rtbss = POMDP::RTBSS<decltype(model)>(model, 1);
+            makeExperimentRTBSS(numExp, modelHor, model, belief, solverHor, rtbss, belief, filename);
+            break;
+        }
         case 3: {
-#ifdef ENTROPY
+            auto model = FiniteBudgetModel(worldWidth, leftP, budget, discount);
+#ifndef ENTROPY
             auto function = [](const POMDP::Belief & b) {
                 double e = 0.0;
                 for ( auto v : b )
@@ -104,16 +110,6 @@ int main(int argc, char * argv[]) {
 #endif
             // We use trajectories so targets move in a realistic way
             makeExperimentRTBSS(numExp, modelHor, model, belief, solverHor, rtbss, belief, filename, true);
-            break;
-        }
-        case 4: {
-            std::cout << "USING MULTIPLE PEOPLE: " << nrPpl << '\n';
-            std::vector<rPOMCP<decltype(model)>> solvers;
-            solvers.reserve(nrPpl);
-            for ( unsigned i = 0; i < nrPpl; ++i )
-                solvers.emplace_back(model, 1000, iterations, 5, k);
-
-            makeMultiExperimentPOMCP(numExp, nrPpl, modelHor, model, belief, solverHor, solvers, belief, filename, true);
             break;
         }
     }

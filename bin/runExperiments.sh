@@ -8,5 +8,5 @@ fi
 
 for i in $(seq $1 $2)
 do
-    echo $i | ./cameraBasicExperiments.sh
+    echo $i | ./cameraPathExperiments.sh
 done

@@ -107,6 +107,7 @@ int main(int argc, char * argv[]) {
             break;
         }
         case 4: {
+            std::cout << "USING MULTIPLE PEOPLE: " << nrPpl << '\n';
             std::vector<rPOMCP<decltype(model)>> solvers;
             solvers.reserve(nrPpl);
             for ( unsigned i = 0; i < nrPpl; ++i )

@@ -3,11 +3,8 @@
 
 #include <AIToolbox/POMDP/Types.hpp>
 #include <AIToolbox/POMDP/Utils.hpp>
-#include <AIToolbox/POMDP/Algorithms/Utils/Pruner.hpp>
 #include <AIToolbox/POMDP/Algorithms/Utils/Projecter.hpp>
 #include <AIToolbox/POMDP/Algorithms/Utils/BeliefGenerator.hpp>
-#include <AIToolbox/ProbabilityUtils.hpp>
-#include <list>
 
 namespace AIToolbox {
     namespace POMDP {
@@ -53,7 +50,7 @@ namespace AIToolbox {
                  * @param nBeliefs The number of support beliefs to use.
                  * @param h The horizon chosen.
                  */
-                PBVI(size_t nBeliefs, unsigned h);
+                PBVI(size_t nBeliefs, unsigned h, double epsilon);
 
                 /**
                  * @brief This function sets a new horizon parameter.
@@ -91,11 +88,17 @@ namespace AIToolbox {
                  * trying to cover as much as possible of the belief space in
                  * order to offer as precise a solution as possible. The final
                  * solution will only contain ValueFunctions for those Beliefs
-                 * (so that in those points the solution will be 100% correct),
                  * and will interpolate them for points it did not solve for.
                  * Even though the resulting solution is approximate very often
                  * it is good enough, and this comes with an incredible
                  * increase in speed.
+                 *
+                 * Note that even in the beliefs sampled the solution is not
+                 * guaranteed to be optimal. This is because a solution for
+                 * horizon h can only be computed with the true solution from
+                 * horizon h-1. If such a solution is approximate (and it is
+                 * here), then the solution for h will not be optimal by
+                 * definition.
                  *
                  * @tparam M The type of POMDP model that needs to be solved.
                  *
@@ -107,7 +110,6 @@ namespace AIToolbox {
                 std::tuple<bool, ValueFunction> operator()(const M & model);
 
             private:
-
                 /**
                  * @brief This function computes a VList composed the maximized cross-sums with respect to the provided beliefs.
                  *
@@ -132,6 +134,7 @@ namespace AIToolbox {
 
                 size_t S, A, O, beliefSize_;
                 unsigned horizon_;
+                double epsilon_;
 
                 mutable std::default_random_engine rand_;
         };
@@ -154,12 +157,16 @@ namespace AIToolbox {
 
             ValueFunction v(1, VList(1, makeVEntry(S)));
 
-            unsigned timestep = 1;
+            unsigned timestep = 0;
 
             Projecter<M> projecter(model);
 
             // And off we go
-            while ( timestep <= horizon_ ) {
+            bool useEpsilon = checkDifferentSmall(epsilon_, 0.0);
+            double variation = epsilon_ * 2; // Make it bigger
+            while ( timestep < horizon_ && ( !useEpsilon || variation > epsilon_ ) ) {
+                ++timestep;
+
                 // Compute all possible outcomes, from our previous results.
                 // This means that for each action-observation pair, we are going
                 // to obtain the same number of possible outcomes as the number
@@ -168,7 +175,9 @@ namespace AIToolbox {
 
                 size_t finalWSize = 0;
                 // In this method we split the work by action, which will then
-                // be joined again at the end of the loop.
+                // be joined again at the end of the loop. This is not required,
+                // but there does not seem to be a speed boost by not doing
+                // so (not that I found one, if there is one I'd like to know!)
                 for ( size_t a = 0; a < A; ++a ) {
                     projs[a][0] = crossSum( projs[a], a, beliefs );
                     finalWSize += projs[a][0].size();
@@ -192,7 +201,10 @@ namespace AIToolbox {
 
                 v.emplace_back(std::move(w));
 
-                ++timestep;
+                // Check convergence
+                if ( useEpsilon ) {
+                    variation = weakBoundDistance(v[timestep-1], v[timestep]);
+                }
             }
 
             return std::make_tuple(true, v);
