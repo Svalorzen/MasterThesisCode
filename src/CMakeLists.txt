@@ -46,11 +46,21 @@ option(VISUALIZE_CAMERAS "Activates Camera world visualization" OFF)
  target_link_libraries(cameraPath      ${AIPOMDP} ${LPSOLVE_LIBRARIES} ${AIMDP})
  target_link_libraries(cameraPathMB    ${AIPOMDP} ${LPSOLVE_LIBRARIES} ${AIMDP})
 
- add_executable(ttest   ./FiniteBudget/maintest.cpp
-     ./FiniteBudget/finiteBudgetProblemIR.cpp
-     ./FiniteBudget/finiteBudgetProblem.cpp)
+# FINITE BUDGET EXECUTABLES:
 
- target_link_libraries(ttest    ${AIPOMDP} ${LPSOLVE_LIBRARIES} ${AIMDP})
+ add_executable(fb ./FiniteBudget/main.cpp
+     ./FiniteBudget/finiteBudgetProblemIR.cpp
+     ./FiniteBudget/finiteBudgetProblem.cpp
+     ./Algorithm/TreeNodes.cpp)
+ add_executable(fbMB ./FiniteBudget/main.cpp
+     ./FiniteBudget/finiteBudgetProblemIR.cpp
+     ./FiniteBudget/finiteBudgetProblem.cpp
+     ./Algorithm/TreeNodes.cpp)
+
+ set_target_properties(fb PROPERTIES COMPILE_DEFINITIONS "ENTROPY")
+
+ target_link_libraries(fb    ${AIPOMDP} ${LPSOLVE_LIBRARIES} ${AIMDP})
+ target_link_libraries(fbMB  ${AIPOMDP} ${LPSOLVE_LIBRARIES} ${AIMDP})
 
 #
 # add_executable(multiCameras mainMultiCameras.cpp cameraProblem.cpp ./BeliefNode.cpp)
